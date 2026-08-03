@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id                   String   @id @default(cuid())
+  name                 String
+  email                String   @unique
+  passwordHash         String
+  role                 String   @default("student") // "student" | "responsible"
+  darkMode             Boolean  @default(false)
+  diagnosticDone       Boolean  @default(false)
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  createdAt            DateTime @default(now())
+  progress       Progress[]
+  exerciseLogs   ExerciseLog[]
+  cognitiveProfile CognitiveProfile?
+  parentLinks    ParentStudent[] @relation("parentLinks")
+  children       ParentStudent[] @relation("childLinks")
+  focusSessions  FocusSession[]
+}
+
+model FocusSession {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id])
+  durationMs Int
+  completed  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model ParentStudent {
+  id        String   @id @default(cuid())
+  parentId  String
+  studentId String
+  parent    Student  @relation("parentLinks", fields: [parentId], references: [id])
+  student   Student  @relation("childLinks", fields: [studentId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([parentId, studentId])
+}
+
+model Subject {
+  id      String   @id @default(cuid())
+  slug    String   @unique
+  name    String
+  color   String   @default("blue")
+  modules Module[]
+}
+
+model Module {
+  id            String       @id @default(cuid())
+  subjectId     String
+  subject       Subject      @relation(fields: [subjectId], references: [id])
+  title         String
+  order         Int
+  difficulty    Int
+  prerequisites String // JSON array de ids de módulos pré-requisito
+  microSkills   MicroSkill[]
+}
+
+model MicroSkill {
+  id        String     @id @default(cuid())
+  moduleId  String
+  module    Module     @relation(fields: [moduleId], references: [id])
+  name      String
+  exercises Exercise[]
+  progress  Progress[]
+}
+
+model Exercise {
+  id            String     @id @default(cuid())
+  microSkillId  String
+  microSkill    MicroSkill @relation(fields: [microSkillId], references: [id])
+  type          String // "multipla_escolha" | "dissertativa" | "fala" | "preenchimento"
+  prompt        String
+  options       Json? // [{ id, text }] para multipla_escolha
+  correctAnswer Json // { option: "b" } | { value: "42" } | { text: "..." }
+  difficulty    Int
+}
+
+model Progress {
+  id             String     @id @default(cuid())
+  studentId      String
+  student        Student    @relation(fields: [studentId], references: [id])
+  microSkillId   String
+  microSkill     MicroSkill @relation(fields: [microSkillId], references: [id])
+  masteryScore   Float      @default(0)
+  attempts       Int        @default(0)
+  lastReviewedAt DateTime?
+  nextReviewAt   DateTime?
+
+  @@unique([studentId, microSkillId])
+}
+
+model ExerciseLog {
+  id          String   @id @default(cuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id])
+  exerciseId  String
+  isCorrect   Boolean
+  timeTakenMs Int
+  errorType   String?
+  createdAt   DateTime @default(now())
+}
+
+model CognitiveProfile {
+  id             String   @id @default(cuid())
+  studentId      String   @unique
+  student        Student  @relation(fields: [studentId], references: [id])
+  speed          Float    @default(50)
+  accuracy       Float    @default(50)
+  focus          Float    @default(50)
+  memory         Float    @default(50)
+  interpretation Float    @default(50)
+  logic          Float    @default(50)
+  persistence    Float    @default(50)
+  updatedAt      DateTime @updatedAt
+}

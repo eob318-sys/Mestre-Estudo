@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "functions": {
+    "**/*.js": { "runtime": "nodejs20.x" }
+  },
+  "buildCommand": "npm run build"
+}

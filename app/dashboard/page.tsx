@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isModuleMastered } from "@/lib/progression";
 import { computeXp, evaluateMissions, levelFromXp } from "@/lib/xp";
 import { DashboardClient } from "@/components/dashboard-client";
+import type { DashboardNotification } from "@/components/dashboard-client";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -161,6 +162,68 @@ export default async function DashboardPage() {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
+  const attempts = await prisma.simuladoAttempt.findMany({
+    where: { studentId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+  });
+  const simuladoHistory = attempts.map((a) => ({
+    id: a.id,
+    subjectSlug: a.subjectSlug,
+    subjectName: a.subjectName,
+    nota: a.nota,
+    correct: a.correct,
+    total: a.total,
+    createdAt: a.createdAt.toISOString(),
+  }));
+
+  const notifications: DashboardNotification[] = [];
+  if (!student.diagnosticDone) {
+    notifications.push({
+      id: "diagnostico",
+      icon: "📌",
+      text: "Faça o diagnóstico de posicionamento para começar no módulo certo em vez de partir do zero.",
+      href: "/diagnostico",
+    });
+  }
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayLogs = logs.filter((l) => l.createdAt >= todayStart);
+  if (todayLogs.length === 0) {
+    notifications.push({
+      id: "estudar-hoje",
+      icon: "📚",
+      text: "Você ainda não estudou hoje. Que tal 15 minutos de treino?",
+      href: "/matematica",
+    });
+  }
+  if (dueReviews.length > 0) {
+    notifications.push({
+      id: "revisao",
+      icon: "🔁",
+      text: `Você tem ${dueReviews.length} revisão(ões) em atraso — revise para não esquecer o conteúdo.`,
+      href: `/${dueReviews[0].subjectSlug}/${dueReviews[0].moduleId}`,
+    });
+  }
+  const nearMission = missions.find(
+    (m) => !m.done && m.progress > 0 && m.progress / m.target >= 0.75
+  );
+  if (nearMission) {
+    notifications.push({
+      id: "missao",
+      icon: "🎯",
+      text: `Missão “${nearMission.title}” quase completa (${nearMission.progress}/${nearMission.target}). Continue assim!`,
+    });
+  }
+  if (notifications.length < 4 && allLogs === 0) {
+    notifications.push({
+      id: "comecar",
+      icon: "🚀",
+      text: "Complete seu primeiro exercício para começar a ganhar XP e subir de nível.",
+      href: "/simulado",
+    });
+  }
+
   return (
     <DashboardClient
       studentName={student.name}
@@ -181,6 +244,8 @@ export default async function DashboardPage() {
         modulesMastered: totalModulesMastered,
         focusMinutes,
       }}
+      simuladoHistory={simuladoHistory}
+      notifications={notifications}
     />
   );
 }

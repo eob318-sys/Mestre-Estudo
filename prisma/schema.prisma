@@ -24,6 +24,21 @@ model Student {
   parentLinks    ParentStudent[] @relation("parentLinks")
   children       ParentStudent[] @relation("childLinks")
   focusSessions  FocusSession[]
+  simuladoAttempts SimuladoAttempt[]
+}
+
+model SimuladoAttempt {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id])
+  subjectSlug String
+  subjectName String
+  total      Int
+  correct    Int
+  nota       Int
+  createdAt  DateTime @default(now())
+
+  @@index([studentId, createdAt])
 }
 
 model FocusSession {

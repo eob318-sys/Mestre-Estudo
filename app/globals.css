@@ -72,6 +72,30 @@ html.contrast-high ::placeholder {
   }
 }
 
+/* Impressão: esconde elementos de navegação e gera PDF limpo */
+@media print {
+  header,
+  .no-print,
+  .skip-link {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 12px;
+  }
+  main {
+    padding: 0 !important;
+  }
+  a {
+    color: #111 !important;
+    text-decoration: none !important;
+  }
+  @page {
+    margin: 14mm 12mm;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

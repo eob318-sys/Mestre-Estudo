@@ -20,6 +20,14 @@ export interface ParentReview {
   moduleTitle: string;
 }
 
+export interface ParentSimulado {
+  subjectName: string;
+  correct: number;
+  total: number;
+  nota: number;
+  createdAt: string | Date;
+}
+
 export interface ParentStudentSummary {
   id: string;
   name: string;
@@ -32,6 +40,7 @@ export interface ParentStudentSummary {
   dueReviews: ParentReview[];
   strugglingSkills: ParentSkill[];
   alerts: string[];
+  simulados: ParentSimulado[];
   updatedAt: string;
 }
 
@@ -45,6 +54,7 @@ export function buildStudentSummary(input: {
   skills: ParentSkill[];
   dueReviews: ParentReview[];
   totalModules: number;
+  simulados?: ParentSimulado[];
 }): ParentStudentSummary {
   const exercises = input.logs.length;
   const correct = input.logs.filter((l) => l.isCorrect).length;
@@ -97,6 +107,7 @@ export function buildStudentSummary(input: {
     dueReviews: input.dueReviews,
     strugglingSkills: struggling,
     alerts,
+    simulados: input.simulados ?? [],
     updatedAt: new Date(input.updatedAt).toISOString(),
   };
 }

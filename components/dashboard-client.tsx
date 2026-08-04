@@ -21,6 +21,13 @@ import { KnowledgeMap, type KnowledgeSubject } from "@/components/knowledge-map"
 import { Avatar } from "@/components/avatar";
 import type { Mission } from "@/lib/xp";
 
+export type DashboardNotification = {
+  id: string;
+  icon: string;
+  text: string;
+  href?: string;
+};
+
 type Props = {
   studentName: string;
   diagnosticDone: boolean;
@@ -57,6 +64,16 @@ type Props = {
     modulesMastered: number;
     focusMinutes: number;
   };
+  simuladoHistory: {
+    id: string;
+    subjectSlug: string;
+    subjectName: string;
+    nota: number;
+    correct: number;
+    total: number;
+    createdAt: string;
+  }[];
+  notifications: DashboardNotification[];
 };
 
 const COLOR_HEX: Record<string, string> = {
@@ -95,6 +112,8 @@ export function DashboardClient(props: Props) {
     missions,
     knowledgeMap,
     totals,
+    simuladoHistory,
+    notifications,
   } = props;
 
   const stats = [
@@ -145,6 +164,37 @@ export function DashboardClient(props: Props) {
             📌 Você ainda não fez o diagnóstico inicial. Faça um teste rápido
             para começar no módulo certo em vez de partir do zero.
           </p>
+        </Card>
+      )}
+
+      {notifications.length > 0 && (
+        <Card className="mt-6 border-sky-300 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/40">
+          <h2 className="mb-3 font-semibold text-slate-900 dark:text-slate-100">
+            🔔 Notificações
+          </h2>
+          <ul className="space-y-2">
+            {notifications.map((n) =>
+              n.href ? (
+                <li key={n.id}>
+                  <Link
+                    href={n.href}
+                    className="flex items-center gap-2 rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-sky-100 dark:border-sky-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    <span>{n.icon}</span>
+                    <span>{n.text}</span>
+                  </Link>
+                </li>
+              ) : (
+                <li
+                  key={n.id}
+                  className="flex items-center gap-2 rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-sky-800 dark:bg-slate-900 dark:text-slate-300"
+                >
+                  <span>{n.icon}</span>
+                  <span>{n.text}</span>
+                </li>
+              )
+            )}
+          </ul>
         </Card>
       )}
 
@@ -222,6 +272,42 @@ export function DashboardClient(props: Props) {
           </div>
         </Card>
       </div>
+
+      {simuladoHistory.length > 0 && (
+        <Card className="mt-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+              📝 Últimos simulados
+            </h2>
+            <Link href="/simulado">
+              <Button variant="secondary" className="!py-1 text-xs">
+                Novo simulado
+              </Button>
+            </Link>
+          </div>
+          <ul className="space-y-2">
+            {simuladoHistory.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+              >
+                <span className="font-medium text-slate-800 dark:text-slate-200">
+                  {s.subjectName}
+                </span>
+                <span className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                  <span>{new Date(s.createdAt).toLocaleDateString("pt-BR")}</span>
+                  <span>
+                    {s.correct}/{s.total} acertos
+                  </span>
+                  <Badge color={s.nota >= 70 ? "green" : s.nota >= 50 ? "orange" : "rose"}>
+                    nota {s.nota}
+                  </Badge>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {dueReviews.length > 0 && (
         <Card className="mt-6 border-indigo-300 bg-indigo-50 dark:border-indigo-900 dark:bg-indigo-950/40">

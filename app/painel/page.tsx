@@ -37,6 +37,10 @@ export default async function ParentPanelPage() {
             },
           },
           cognitiveProfile: true,
+          simuladoAttempts: {
+            orderBy: { createdAt: "desc" },
+            take: 5,
+          },
         },
       },
     },
@@ -75,6 +79,13 @@ export default async function ParentPanelPage() {
       skills,
       dueReviews: due,
       totalModules: skills.length,
+      simulados: s.simuladoAttempts.map((a) => ({
+        subjectName: a.subjectName,
+        correct: a.correct,
+        total: a.total,
+        nota: a.nota,
+        createdAt: a.createdAt,
+      })),
     });
   });
 
@@ -138,6 +149,41 @@ export default async function ParentPanelPage() {
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">Módulos</p>
                 </div>
               </div>
+
+              {st.simulados.length > 0 && (
+                <div className="mt-4">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    📝 Simulados recentes ({st.simulados.length})
+                  </p>
+                  <ul className="space-y-1">
+                    {st.simulados.map((a) => (
+                      <li
+                        key={`${a.subjectName}-${a.createdAt}`}
+                        className="flex items-center justify-between gap-2 text-sm"
+                      >
+                        <span className="text-slate-700 dark:text-slate-300">
+                          {a.subjectName}{" "}
+                          <span className="text-xs text-slate-400">
+                            · {new Date(a.createdAt).toLocaleDateString("pt-BR")}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <span className="text-slate-500 dark:text-slate-400">
+                            {a.correct}/{a.total} acertos
+                          </span>
+                          <Badge
+                            color={
+                              a.nota >= 70 ? "green" : a.nota >= 50 ? "orange" : "rose"
+                            }
+                          >
+                            nota {a.nota}
+                          </Badge>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {st.alerts.length > 0 && (
                 <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">

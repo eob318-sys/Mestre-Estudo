@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { buildWeeklyReport, lastWeeks, weeklyAlerts } from "@/lib/report";
 import { Badge, Card } from "@/components/ui";
 import { ReportEmailButton } from "@/components/report-email-button";
+import { ReportPdfButton } from "@/components/report-pdf-button";
 
 function formatTime(ms: number): string {
   const m = Math.round(ms / 60000);
@@ -65,7 +66,10 @@ export default async function ReportsPage() {
             Seu resumo das últimas 4 semanas — pratique e compare a evolução.
           </p>
         </div>
-        <ReportEmailButton email={student?.email ?? ""} name={student?.name ?? ""} />
+        <div className="no-print flex items-center gap-2">
+          <ReportPdfButton />
+          <ReportEmailButton email={student?.email ?? ""} name={student?.name ?? ""} />
+        </div>
       </div>
 
       <div className="space-y-4">

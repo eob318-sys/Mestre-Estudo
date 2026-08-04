@@ -74,7 +74,7 @@ export async function POST(req: Request) {
 
   const subject = await prisma.subject.findUnique({
     where: { slug: subjectSlug },
-    select: { id: true },
+    select: { id: true, name: true },
   });
   if (!subject) return NextResponse.json({ error: "Matéria não encontrada" }, { status: 404 });
 
@@ -99,19 +99,32 @@ export async function POST(req: Request) {
   }
 
   const correctCount = results.filter((r) => r.correta).length;
+  const nota = notaSimulado(correctCount, results.length);
 
-  await prisma.exerciseLog.createMany({
-    data: results.map((r) => ({
-      studentId: session.user.id,
-      exerciseId: r.exerciseId,
-      isCorrect: r.correta,
-      timeTakenMs: 0,
-      errorType: null,
-    })),
-  });
+  await prisma.$transaction([
+    prisma.exerciseLog.createMany({
+      data: results.map((r) => ({
+        studentId: session.user.id,
+        exerciseId: r.exerciseId,
+        isCorrect: r.correta,
+        timeTakenMs: 0,
+        errorType: null,
+      })),
+    }),
+    prisma.simuladoAttempt.create({
+      data: {
+        studentId: session.user.id,
+        subjectSlug,
+        subjectName: subject.name,
+        total: results.length,
+        correct: correctCount,
+        nota,
+      },
+    }),
+  ]);
 
   return NextResponse.json({
-    nota: notaSimulado(correctCount, results.length),
+    nota,
     correctCount,
     total: results.length,
     results,

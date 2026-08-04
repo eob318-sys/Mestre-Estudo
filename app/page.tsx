@@ -63,6 +63,9 @@ export default async function Home() {
           <span className="text-lg font-bold">Mestre do Estudo</span>
         </Link>
         <nav className="flex items-center gap-2">
+          <Link href="/sobre">
+            <Button variant="ghost">Sobre o projeto</Button>
+          </Link>
           <Link href="/login">
             <Button variant="ghost">Entrar</Button>
           </Link>
@@ -149,7 +152,7 @@ export default async function Home() {
             <p className="text-sm text-slate-600 dark:text-slate-400">matérias completas</p>
           </div>
           <div>
-            <p className="text-3xl font-black text-indigo-700 dark:text-indigo-300">90+</p>
+            <p className="text-3xl font-black text-indigo-700 dark:text-indigo-300">110+</p>
             <p className="text-sm text-slate-600 dark:text-slate-400">exercícios de partida</p>
           </div>
           <div>
@@ -162,9 +165,14 @@ export default async function Home() {
       <footer className="border-t border-slate-200 py-8 dark:border-slate-800">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-4 text-sm text-slate-500 sm:flex-row dark:text-slate-400">
           <p>Mestre do Estudo — estudo adaptativo com IA</p>
-          <span className="flex items-center gap-2">
-            <Badge color="green">Aluno</Badge>
-            <Badge color="blue">Responsável</Badge>
+          <span className="flex items-center gap-3">
+            <Link href="/sobre" className="hover:underline">
+              Sobre o projeto
+            </Link>
+            <span className="flex items-center gap-2">
+              <Badge color="green">Aluno</Badge>
+              <Badge color="blue">Responsável</Badge>
+            </span>
           </span>
         </div>
       </footer>

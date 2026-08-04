@@ -115,14 +115,15 @@ model Progress {
 }
 
 model ExerciseLog {
-  id          String   @id @default(cuid())
-  studentId   String
-  student     Student  @relation(fields: [studentId], references: [id])
-  exerciseId  String
-  isCorrect   Boolean
-  timeTakenMs Int
-  errorType   String?
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id])
+  exerciseId    String
+  isCorrect     Boolean
+  timeTakenMs   Int
+  errorType     String?
+  studentAnswer String? // texto ou dataURL (imagem) da resposta do aluno
+  createdAt     DateTime @default(now())
 }
 
 model CognitiveProfile {

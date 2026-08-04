@@ -1,7 +1,7 @@
 import { requestAiChat } from "@/lib/ai";
 
 export type GeneratedExercise = {
-  type: "multipla_escolha" | "preenchimento" | "dissertativa" | "fala";
+  type: "multipla_escolha" | "preenchimento" | "dissertativa" | "fala" | "escrita_mao";
   prompt: string;
   difficulty: number;
   options?: { id: string; text: string }[];
@@ -67,7 +67,7 @@ export function parseGeneratedExercise(text: string): GeneratedExercise | null {
     return { type, prompt, difficulty, correctAnswer: { value } };
   }
 
-  if (type === "dissertativa" || type === "fala") {
+  if (type === "dissertativa" || type === "fala" || type === "escrita_mao") {
     const text = String(ca.text ?? raw.correct ?? "").trim();
     if (!text) return null;
     return { type, prompt, difficulty, correctAnswer: { text } };
@@ -90,13 +90,14 @@ export async function generateExercise(input: {
 
   const user = `Gere EXATAMENTE UM exercício novo para a habilidade "${input.skillName}" da matéria "${input.subjectName}".
 Formato JSON (sem texto fora):
-{"type":"multipla_escolha"|"preenchimento"|"dissertativa"|"fala","prompt":"enunciado da questão","difficulty":1|2|3,"options":[{"id":"a","text":"alternativa"}],"correctAnswer":{...}}
+{"type":"multipla_escolha"|"preenchimento"|"dissertativa"|"fala"|"escrita_mao","prompt":"enunciado da questão","difficulty":1|2|3,"options":[{"id":"a","text":"alternativa"}],"correctAnswer":{...}}
 Regras:
 - multipla_escolha: envie 4 options (ids a, b, c, d) e correctAnswer {"option":"c"}; o enunciado descreve a pergunta e as alternativas são respostas plausíveis.
 - preenchimento: correctAnswer {"value":"<resposta exata>"}; indicada para cálculos.
 - dissertativa: correctAnswer {"text":"<resposta de referência curta>"}.
 - fala (somente para Inglês): a questão pede para o aluno falar uma frase; correctAnswer {"text":"<frase em inglês>"}.
-- Tipo válido conforme a matéria: Matemática usa preferencialmente preenchimento ou multipla_escolha; Português final usa dissertativa ou multipla_escolha; Inglês usa fala ou multipla_escolha.
+- escrita_mao (somente para Matemática): a questão pede para o aluno escrever à mão o resultado de um cálculo ou a resposta numérica; correctAnswer {"text":"<valor exato>"} (ex.: "62").
+- Tipo válido conforme a matéria: Matemática usa preferencialmente preenchimento, multipla_escolha ou escrita_mao; Português final usa dissertativa ou multipla_escolha; Inglês usa fala ou multipla_escolha.
 - difficulty entre 1 e 3, coerente com o nível ${input.difficulty}.
 ${input.subjectSlug === "ingles" ? "Tudo em inglês." : "Tudo em português."}`;
 

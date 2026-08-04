@@ -194,7 +194,7 @@ domínio
 | Matérias | 3 (Matemática · Português · Inglês) |
 | Módulos | 18 (6 por matéria) |
 | Micro-habilidades | 38 |
-| Exercícios em produção | 113 |
+| Exercícios em produção | 119 (inclui 6 de escrita à mão) |
 | Tipos de exercício | Múltipla escolha · Preenchimento · Fala |
 | Testes automatizados | 84 (14 suítes) |
 | Rotas da aplicação | 36 |
@@ -275,6 +275,16 @@ O painel do responsável traduz dados em **decisões**, com vínculo aluno↔res
 ## 2.9 Acessibilidade (incluída, não opcional)
 
 Tema claro/escuro · alto contraste · escala de fonte 115%/130% · skip-link · navegação total por teclado.
+
+## 2.10 Escrita à Mão — Modo Caneta (novidade)
+
+O aluno pode resolver exercícios **escrevendo na tela com a caneta do tablet (ou com o dedo)**, como nas folhas do método Kumon — só que digital.
+
+- **Área de escrita** nativa (canvas com Pointer Events): suporta caneta, toque e mouse, com botões *Desfazer* e *Limpar* e linhas-guia para caprichar na letra.
+- **Correção por IA com visão**: a escrita (imagem PNG) é enviada ao Gemini, que lê a resposta manuscrita e devolve nota, explicação e dica — aceitando até números por extenso ("quarenta e dois" = 42).
+- **Registro no banco**: a imagem da resposta fica no histórico (`ExerciseLog.studentAnswer`), preservando o que foi escrito.
+- **Fallback**: sem IA ativa, o valor esperado é exibido com uma dica para o aluno comparar a própria escrita.
+- **Exemplos já disponíveis:** contas de adição/subtração, tabuada, equações, conectivos em Português e escrita em Inglês.
 
 ---
 

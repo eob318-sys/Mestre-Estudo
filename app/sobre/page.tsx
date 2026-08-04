@@ -43,6 +43,11 @@ const GOALS = [
     desc: "Lembretes de revisão espaçada, diagnóstico pendente e metas de estudo direto no dashboard.",
   },
   {
+    icon: "🖊️",
+    title: "Escrita à mão (modo caneta)",
+    desc: "Resolva a questão escrevendo com a caneta do tablet ou com o dedo — a IA lê a escrita e corrige na hora. Como resolver na folha, só que digital.",
+  },
+  {
     icon: "♿",
     title: "Acessibilidade",
     desc: "Tema escuro, alto contraste, escala de fonte e navegação por teclado — pensado para todos.",
@@ -57,7 +62,7 @@ const STACK = [
   { name: "NextAuth (JWT)", role: "Login e controle de papéis" },
   { name: "Tailwind CSS", role: "Interface responsiva" },
   { name: "Recharts", role: "Gráficos do dashboard" },
-  { name: "Vitest", role: "84 testes em 14 suítes" },
+  { name: "Vitest", role: "91 testes em 15 suítes" },
   { name: "Vercel", role: "Deploy contínuo a partir do GitHub" },
 ];
 
@@ -73,6 +78,7 @@ const PIPELINE = [
   "✔ Tutor em português e tutor de inglês",
   "✔ XP, níveis, missões e avatar",
   "✔ Modo foco com cronômetro",
+  "✔ Escrita à mão (modo caneta) com correção por IA",
   "✔ Recuperação de senha por e-mail",
   "✔ Acessibilidade (tema escuro, alto contraste, escala de fonte)",
 ];
@@ -219,7 +225,7 @@ export default function AboutPage() {
           <Card className="p-6">
             <h3 className="font-bold text-indigo-700 dark:text-indigo-300">Qualidade</h3>
             <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-400">
-              <li>• 84 testes automatizados em 14 suítes — todos verdes.</li>
+              <li>• 91 testes automatizados em 15 suítes — todos verdes.</li>
               <li>• TypeScript sem erros e ESLint limpo.</li>
               <li>• Build de produção validado localmente e na Vercel.</li>
               <li>• Banco PostgreSQL gerenciado (Neon) com backup da nuvem.</li>

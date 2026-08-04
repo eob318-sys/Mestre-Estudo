@@ -100,6 +100,7 @@ export async function POST(req: Request) {
 
   const correctCount = results.filter((r) => r.correta).length;
   const nota = notaSimulado(correctCount, results.length);
+  const answerByExercise = new Map(answers.map((a) => [a.exerciseId, String(a.answer ?? "")]));
 
   await prisma.$transaction([
     prisma.exerciseLog.createMany({
@@ -109,6 +110,7 @@ export async function POST(req: Request) {
         isCorrect: r.correta,
         timeTakenMs: 0,
         errorType: null,
+        studentAnswer: answerByExercise.get(r.exerciseId),
       })),
     }),
     prisma.simuladoAttempt.create({

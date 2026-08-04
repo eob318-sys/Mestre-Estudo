@@ -103,7 +103,7 @@ export function computeCognitiveProfile(logs: CognitiveLog[]): CognitiveResult {
     ? Math.round((open.filter((l) => l.isCorrect).length / open.length) * 100)
     : accuracy;
 
-  const calc = logs.filter((l) => l.type === "preenchimento");
+  const calc = logs.filter((l) => l.type === "preenchimento" || l.type === "escrita_mao");
   const logic = calc.length
     ? Math.round((calc.filter((l) => l.isCorrect).length / calc.length) * 100)
     : accuracy;

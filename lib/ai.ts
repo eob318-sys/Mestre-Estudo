@@ -88,6 +88,16 @@ export function localCorrection(
     );
   }
 
+  if (type === "escrita_mao") {
+    return {
+      nota: 0,
+      correta: false,
+      explicacao: `Não foi possível ler sua escrita automaticamente por enquanto. A resposta esperada era "${ca.text ?? ""}" — compare com o que você escreveu.`,
+      dica: "Escreva com mais capricho e tente de novo, ou peça ajuda ao tutor.",
+      tipoErro: "ilegivel",
+    };
+  }
+
   if (type === "fala" || type === "dissertativa") {
     const expected = normalizeText(String(ca.text ?? ""));
     const got = normalizeText(studentAnswer);
@@ -458,6 +468,16 @@ export async function correctExercise(input: {
   if (input.type === "multipla_escolha" || input.type === "preenchimento") {
     return localCorrection(input.subject, input.type, input.correctAnswer, input.studentAnswer);
   }
+  if (input.type === "escrita_mao") {
+    const ai = await handwritingCorrection(
+      input.subject,
+      input.prompt,
+      input.correctAnswer,
+      input.studentAnswer
+    );
+    if (ai) return ai;
+    return localCorrection(input.subject, input.type, input.correctAnswer, input.studentAnswer);
+  }
   const ai = await aiCorrection(
     input.subject,
     input.type,
@@ -467,6 +487,154 @@ export async function correctExercise(input: {
   );
   if (ai) return ai;
   return localCorrection(input.subject, input.type, input.correctAnswer, input.studentAnswer);
+}
+
+// ===== Correção de escrita à mão (visão) =====
+// O aluno escreve com a caneta do tablet; a imagem (dataURL PNG) é enviada
+// ao Gemini, que lê a escrita e compara com a resposta esperada. Como Groq e
+// OpenRouter não aceitam imagem, o fallback vision usa somente o Gemini.
+
+async function callGeminiVision(
+  key: string,
+  model: string,
+  system: string,
+  prompt: string,
+  imageData: string,
+  timeoutMs: number
+): Promise<{ text: string | null; kind: FailureKind | null }> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+    model
+  )}:generateContent?key=${encodeURIComponent(key)}`;
+  const res = await fetchJson(
+    url,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType: "image/png", data: imageData } },
+            ],
+          },
+        ],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 512 },
+      }),
+    },
+    timeoutMs
+  );
+  if (!res) return { text: null, kind: "transient" };
+  if (!res.ok) {
+    const err = parseJson(res.body) as { error?: { status?: string } } | null;
+    const status = err?.error?.status ?? "";
+    if (
+      res.status === 429 ||
+      status === "RESOURCE_EXHAUSTED" ||
+      status === "UNAVAILABLE" ||
+      status === "FAILED_PRECONDITION"
+    ) {
+      return { text: null, kind: "quota" };
+    }
+    return { text: null, kind: res.status >= 500 ? "transient" : "client" };
+  }
+  const data = parseJson(res.body) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  } | null;
+  const text = (data?.candidates?.[0]?.content?.parts ?? [])
+    .map((p) => p.text ?? "")
+    .join("")
+    .trim();
+  return { text: text || null, kind: null };
+}
+
+async function requestVision(
+  system: string,
+  prompt: string,
+  imageData: string
+): Promise<string | null> {
+  const keys = parseList(process.env.GEMINI_API_KEYS);
+  if (keys.length === 0) return null;
+  const configured = parseList(process.env.GEMINI_MODELS);
+  const models = configured.length > 0 ? configured : DEFAULT_MODELS.gemini;
+  const timeoutMs = Number(process.env.AI_TIMEOUT_MS) || 30_000;
+  const lw = lastWorking.get("gemini");
+  const modelStart = lw ? (lw.modelIdx + 1) % models.length : 0;
+  const keyStart = lw ? (lw.keyIdx + 1) % keys.length : 0;
+
+  for (let mi = 0; mi < models.length; mi++) {
+    const model = models[(modelStart + mi) % models.length];
+    for (let ki = 0; ki < keys.length; ki++) {
+      const key = keys[(keyStart + ki) % keys.length];
+      const pauseKey = `gemini::${key}`;
+      if ((pausedUntil.get(pauseKey) ?? 0) > Date.now()) continue;
+      const result = await callGeminiVision(key, model, system, prompt, imageData, timeoutMs);
+      if (result.text !== null) {
+        lastWorking.set("gemini", {
+          ts: Date.now(),
+          modelIdx: (modelStart + mi) % models.length,
+          keyIdx: (keyStart + ki) % keys.length,
+        });
+        return result.text;
+      }
+      pausedUntil.set(pauseKey, Date.now() + COOLDOWN_MS[result.kind ?? "transient"]);
+    }
+  }
+  return null;
+}
+
+/** Corrige uma resposta escrita à mão (imagem) usando a visão do Gemini. */
+async function handwritingCorrection(
+  subject: string,
+  prompt: string,
+  correctAnswer: unknown,
+  studentAnswer: string
+): Promise<CorrectionResult | null> {
+  const ca = (correctAnswer ?? {}) as Record<string, unknown>;
+  const reference = String(ca.text ?? "");
+  if (!reference) return null;
+
+  const system = `${personaFor(subject)}
+Sua tarefa é corrigir a resposta QUE O ALUNO ESCREVEU À MÃO (a imagem enviada).
+Instruções:
+- Leia o que está escrito na imagem e compare com a resposta esperada.
+- Números podem ser iguais em formato numérico ou por extenso (ex.: "42" ou "quarenta e dois") — os dois estão certos.
+- Se não for possível ler, use correta=false, nota baixa e peça para escrever com capricho.
+- Seja tolerante com letra cursiva e pequenas variações, desde que o valor final esteja correto.
+- Responda APENAS em JSON válido, sem texto fora dele:
+{"nota": 0-100, "correta": true|false, "explicacao": "o que o aluno escreveu e se está certo", "dica": "uma dica prática curta", "tipoErro": "erro_conceitual"|"erro_calculo"|"gramatical"|"distracao"|"ilegivel"|null}`;
+
+  const match = studentAnswer.match(/^data:image\/[^;]+;base64,(.+)$/);
+  if (!match?.[1]) return null;
+
+  const text = await requestVision(
+    system,
+    `ENUNCIADO: ${prompt}\nRESPOSTA ESPERADA (referência): ${reference}`,
+    match[1]
+  );
+  if (!text) return null;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+  try {
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      nota?: number;
+      correta?: boolean;
+      explicacao?: string;
+      dica?: string;
+      tipoErro?: string;
+    };
+    return {
+      nota: Math.max(0, Math.min(100, Math.round(Number(parsed.nota ?? 0)))),
+      correta: Boolean(parsed.correta),
+      explicacao: String(parsed.explicacao ?? "Correção concluída."),
+      dica: String(parsed.dica ?? "Continue tentando!"),
+      tipoErro: typeof parsed.tipoErro === "string" ? parsed.tipoErro : null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** Chat do personagem de IA (usado no Inglês, Sam). Fallback caso a IA falhe. */

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Card, ProgressBar } from "@/components/ui";
+import { HandwritingPad } from "@/components/handwriting-pad";
 import { accent, STATUS_LABEL } from "@/lib/accent";
 import type { ModuleDetail, ExerciseClient } from "@/lib/queries";
 
@@ -487,6 +488,23 @@ export function ExerciseRunner({ module }: { module: ModuleDetail }) {
               rows={4}
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
+          )}
+
+          {current.type === "escrita_mao" && (
+            <div className="space-y-3">
+              <HandwritingPad
+                onChange={(dataUrl) => recordAnswer(current.id, dataUrl)}
+                defaultImage={
+                  answers[current.id]?.startsWith("data:image")
+                    ? answers[current.id]
+                    : undefined
+                }
+              />
+              <p className="text-xs text-slate-400">
+                Escreva a resposta com a caneta do tablet (ou com o dedo). Se errar, use
+                desfazer ou limpar e tente de novo.
+              </p>
+            </div>
           )}
 
           {current.type === "fala" && (

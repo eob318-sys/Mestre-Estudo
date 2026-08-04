@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Card } from "@/components/ui";
+import { HandwritingPad } from "@/components/handwriting-pad";
 import type { SimExercise } from "@/lib/simulado";
 
 type Subject = { slug: string; name: string; color: string };
@@ -170,7 +171,15 @@ export function SimuladoPage({ subjects }: { subjects: Subject[] }) {
             <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
               {i + 1}. {e.prompt}
             </p>
-            {e.options ? (
+            {e.type === "escrita_mao" ? (
+              <div className="mt-2">
+                <HandwritingPad
+                  onChange={(dataUrl) =>
+                    setAnswers((a) => ({ ...a, [e.id]: dataUrl }))
+                  }
+                />
+              </div>
+            ) : e.options ? (
               <div className="mt-2 grid gap-1.5">
                 {e.options.map((o) => (
                   <button

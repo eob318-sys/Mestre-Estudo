@@ -61,6 +61,7 @@ export async function POST(req: Request) {
   const timeByExercise = new Map(
     answers.map((a) => [a.exerciseId, Number(a.timeTakenMs) || 0])
   );
+  const answerByExercise = new Map(answers.map((a) => [a.exerciseId, String(a.answer ?? "")]));
 
   await prisma.exerciseLog.createMany({
     data: results.map((r) => ({
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
       isCorrect: r.correta,
       timeTakenMs: timeByExercise.get(r.exerciseId) ?? 0,
       errorType: r.tipoErro,
+      studentAnswer: answerByExercise.get(r.exerciseId),
     })),
   });
 
